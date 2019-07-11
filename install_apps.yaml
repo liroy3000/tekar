@@ -1,0 +1,17 @@
+---
+
+- name: Install apps
+  hosts: test
+  vars:
+    apps: 
+      - "wget"
+      - "sudo"
+      - "nano"
+      - "dnsutils"
+      - "net-tools"
+
+  tasks:
+
+    - name: install
+      apt:
+        name: "{{ apps }}"

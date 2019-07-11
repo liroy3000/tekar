@@ -1,0 +1,31 @@
+---
+
+- name: Backup home folders
+  hosts: test
+
+  tasks:
+
+    - name: send script
+      copy:
+        src: backup.sh
+        dest: /opt/backup.sh
+        owner: root
+        mode: 0700
+
+    - name: create folder backup
+      file:
+        path: /backup_home
+        state: directory
+
+    - name: get folders
+      shell: ls /home
+      register: users
+
+    - name: add cron
+      cron:
+        name: backup "{{ item }}" home folder
+        minute: 0
+        hour: 23
+        user: root
+        job: /opt/backup.sh /home/"{{ item }}" /backup_home/"{{ item }}"
+      loop: "{{ users.stdout_lines }}"

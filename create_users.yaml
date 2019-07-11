@@ -1,0 +1,54 @@
+---
+
+- name: Create users
+  hosts: test
+  vars:
+    users:
+      - username: "user1"
+        groupname: "group1"
+      - username: "user2"
+        groupname: "group2"
+      - username: "user3"
+        groupname: "group1"
+
+  tasks:
+
+    - name: create users
+      user:
+        name: "{{ item.username }}"
+        groups: "{{ item.groupname }}"
+        shell: /bin/bash
+        generate_ssh_key: yes
+        append: yes
+      loop: "{{ users }}"
+
+    - name: add users in sudoers
+      lineinfile:
+        path: /etc/sudoers
+        line: '{{ item.username }} ALL=(ALL:ALL) NOPASSWD: ALL'
+        create: yes
+      loop: "{{ users }}"
+
+    - name: disable password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'PasswordAuthentication no'
+        create: yes
+
+    - name:  restart ssh
+      systemd:
+        name: sshd
+        state: restarted
+
+    - name: read ssh keys
+      shell: cat /home/"{{ item.username }}"/.ssh/id_rsa.pub
+      register: keys
+      loop: "{{ users }}"
+      
+    - name: print ssh keys 
+      debug: 
+        msg: 
+          - "{{ item.item.username }}"
+          - "{{ item.stdout }}"
+        
+      loop: "{{ keys.results }}"
